@@ -371,4 +371,4 @@ if __name__ == "__main__":
     if image.isNull():
          FreeCAD.Console.PrintMessage(imageReader.errorString())
     else:
-        createImage(imagePath).ppi = 2
+        createImage(imagePath)

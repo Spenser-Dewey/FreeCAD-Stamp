@@ -1,6 +1,6 @@
 import FreeCAD
 
-params = FreeCAD.ParamGet('User parameter:Plugins/Furti/Lithophane')
+params = FreeCAD.ParamGet('User parameter:Plugins/Furti/LithophaneMaker')
 
 
 def useBlenderForBooleanOperations():

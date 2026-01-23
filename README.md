@@ -1,4 +1,4 @@
-# FreeCAD-Lithophane
+# LithophaneMaker
 
 Convert a image to a Lithophane for 3D Printing
 
@@ -21,7 +21,7 @@ to this awesome Lithophane
     - FreeCAD is a AWESOME free 3D CAD parametric modeling application.
     - Don't worry. You don't need to know much about 3D modelling to get a nice looking Lithophane out of this tool.
 
-2. Install the Lithophane Workbench. The workbench is available in the addon manager. The addon manager can be found in the ``Tools`` menu. Locate the "Lithophane" entry and click Install.
+2. Install the LithophaneMaker. The workbench is available in the addon manager. The addon manager can be found in the ``Tools`` menu. Locate the "Lithophane" entry and click Install.
 
 3. Switch to the Lithophane workbench in FreeCAD
     - ![Workbench Selection](./Resources/Documentation/workbench_selection.png)
@@ -122,7 +122,7 @@ See `Boolean Mesh` for more informations on the genereated object.
 
 ![Final Geometry](./Resources/Documentation/geometry_3dview.png)
 
-More Features might follow: https://github.com/furti/FreeCAD-Lithophane/issues/15
+More Features might follow: https://github.com/furti/LithophaneMaker/issues/15
 
 ### Create Tube / Cylinder
 ![Create Tube](./Resources/Icons/CreateTube.svg)
@@ -167,7 +167,7 @@ This mode is especially useful when creating cylindrical lithophanes and you wan
 ### Make Solid
 ![Import Image](./Resources/Icons/MakeSolid.svg)
 
-Converts the Mesh selected to a solid. Should only be used with meshes created by the Lithophane Workbench because this command makes some assumptions on the structure of the mesh to speed up mesh creation. You have to select a single Mesh in the TreeView for this command to work.
+Converts the Mesh selected to a solid. Should only be used with meshes created by the LithophaneMaker because this command makes some assumptions on the structure of the mesh to speed up mesh creation. You have to select a single Mesh in the TreeView for this command to work.
 
 **This command can take a long time and freeze your FreeCAD instance**.
 
@@ -176,7 +176,7 @@ This command might be handy to convert your mesh and use the power of FreeCAD to
 ### Measure Size
 ![Import Image](./Resources/Icons/Measure.svg)
 
-Displays a Dialog with Length (in X direction), Width (in Y direction) and Height (in Z direction) of the selected Mesh. You have to select a Mesh in the TreeView for this command to work. It should work not only with Meshes created by the Lithophane Workbench but with all kind of Meshes in the document.
+Displays a Dialog with Length (in X direction), Width (in Y direction) and Height (in Z direction) of the selected Mesh. You have to select a Mesh in the TreeView for this command to work. It should work not only with Meshes created by the LithophaneMaker but with all kind of Meshes in the document.
 
 The command respects your unit and decimal preferences.
 
@@ -233,7 +233,7 @@ A Boolean Operation has the following properties:
  - **Enabled**: When set to true the operation will be applied. When set to false the operation will be skipped.
  - **Mode**: The mode (Add, Subtract) the operation is working in.
 
-See https://furti.github.io/FreeCAD-Lithophane/#boolean_showcase for a demo.
+See https://furti.github.io/LithophaneMaker/#boolean_showcase for a demo.
 
 To apply Boolean Operations to a mesh you either have to install ```OpenSCAD``` or ```Blender``` and configure one of them in FreeCAD.
 

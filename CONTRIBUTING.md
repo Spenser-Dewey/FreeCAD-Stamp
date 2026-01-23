@@ -1,4 +1,4 @@
-# Contributing to the Lithophane Workbench
+# Contributing to the LithophaneMaker
 
 At first, thank you for trying the Workbench and for taking the time to contribute :)
 

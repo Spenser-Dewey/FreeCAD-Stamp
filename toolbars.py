@@ -17,6 +17,7 @@ toolbarManager = ToolbarManager()
 import import_image
 import create_box
 import create_tube
+import create_stamp
 import scale
 
 # solid tools

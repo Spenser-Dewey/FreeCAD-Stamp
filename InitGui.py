@@ -1,9 +1,9 @@
 import FreeCAD, FreeCADGui
 
-class LithophaneWorkbench (FreeCADGui.Workbench):
+class LithophaneMakerWorkbench (FreeCADGui.Workbench):
     "Create Lithophanes with FreeCAD"
 
-    MenuText = "Lithophane"
+    MenuText = "LithophaneMaker"
     ToolTip = "Create Lithophanes with FreeCAD"
 
     def __init__(self):
@@ -22,4 +22,4 @@ class LithophaneWorkbench (FreeCADGui.Workbench):
 
 #   def Deactivated(self):
 
-FreeCADGui.addWorkbench(LithophaneWorkbench())
+FreeCADGui.addWorkbench(LithophaneMakerWorkbench())
