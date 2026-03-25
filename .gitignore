@@ -1,4 +1,13 @@
 #stuff
+
+# Claude Code
+.claude/
+
+# Vim swap/backup files
+*.swp
+*.swo
+*.un~
+*~
 *.stl
 *.FCStd*
 
