@@ -104,19 +104,17 @@ class StampLithophane(BooleanMesh):
             # facets.extend([p1_top, p2_top, p2_bottom])
             # facets.extend([p2_bottom, p1_bottom, p1_top])
             
-        center_point = lithophane_utils.vectorAtGround(processingParameters.center)
+        center = processingParameters.center
+        center_point = FreeCAD.Vector(center.x, center.y, base_height)
         radius = processingParameters.radius
         for i in range(360):
-            angle1 = math.radians(i)
-            angle2 = math.radians((i + 1) % 360)
-            
-            p1 = geometry_utils.pointOnCircle(radius, angle1)
-            p2 = geometry_utils.pointOnCircle(radius, angle2)
-            
-            bottomLeft = FreeCAD.Vector(p1[0], p1[1], base_height)
-            bottomRight = FreeCAD.Vector(p2[0], p1[1], base_height)
-            
-            facets.extend([center_point, bottomLeft, bottomRight])
+            p1 = geometry_utils.pointOnCircle(radius, i)
+            p2 = geometry_utils.pointOnCircle(radius, (i + 1) % 360)
+
+            v1 = center + FreeCAD.Vector(p1[0], p1[1], base_height)
+            v2 = center + FreeCAD.Vector(p2[0], p2[1], base_height)
+
+            facets.extend([center_point, v1, v2])
         processingParameters.imagePlane = Mesh.Mesh(facets)
 
         return processingParameters
@@ -130,11 +128,8 @@ class StampLithophane(BooleanMesh):
 
         # Side walls of the cylindrical base, from Z=0 to Z=base_height
         for i in range(360):
-            angle1 = math.radians(i)
-            angle2 = math.radians((i + 1) % 360)
-
-            p1 = geometry_utils.pointOnCircle(processingParameters.radius, angle1)
-            p2 = geometry_utils.pointOnCircle(processingParameters.radius, angle2)
+            p1 = geometry_utils.pointOnCircle(radius, i)
+            p2 = geometry_utils.pointOnCircle(radius, (i + 1) % 360)
 
             p1_bottom = center + FreeCAD.Vector(p1[0], p1[1], 0)
             p2_bottom = center + FreeCAD.Vector(p2[0], p2[1], 0)
@@ -155,19 +150,16 @@ class StampLithophane(BooleanMesh):
 
         facets = []
         
-        center_point = lithophane_utils.vectorAtGround(center) # Center at Z=0
+        center_point = FreeCAD.Vector(center.x, center.y, 0)
 
         for i in range(360):
-            angle1 = math.radians(i)
-            angle2 = math.radians((i + 1) % 360)
-            
-            p1 = geometry_utils.pointOnCircle(radius, angle1)
-            p2 = geometry_utils.pointOnCircle(radius, angle2)
-            
-            bottomLeft = FreeCAD.Vector(p1[0], p1[1], 0)
-            bottomRight = FreeCAD.Vector(p2[0], p2[1], 0)
-            
-            facets.extend([center_point, bottomLeft, bottomRight])
+            p1 = geometry_utils.pointOnCircle(radius, i)
+            p2 = geometry_utils.pointOnCircle(radius, (i + 1) % 360)
+
+            v1 = center + FreeCAD.Vector(p1[0], p1[1], 0)
+            v2 = center + FreeCAD.Vector(p2[0], p2[1], 0)
+
+            facets.extend([center_point, v2, v1])  # reversed winding: normal faces -Z (outward)
 
         processingParameters.bottomCircle = Mesh.Mesh(facets)
 
@@ -198,8 +190,8 @@ class StampLithophane(BooleanMesh):
             FreeCAD.Console.PrintError("Mesh has non-manifold edges!\n")
         # if processingParameters.stamp.hasInvertedNormals():
             # FreeCAD.Console.PrintError("Mesh has inverted normals!\n")
-        if processingParameters.stamp.isSelfIntersecting():
-            FreeCAD.Console.PrintError("Mesh is self-intersecting!\n")
+        processingParameters.stamp.fixSelfIntersections()
+            # FreeCAD.Console.PrintError("Mesh is self-intersecting!\n")
         
         FreeCAD.Console.PrintMessage("--- End Mesh Diagnostics ---\
 ")
