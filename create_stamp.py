@@ -9,6 +9,7 @@ from utils.resource_utils import iconPath
 from boolean_mesh import BooleanMesh
 from boolean_mesh import ViewProviderBooleanMesh
 from create_geometry_base import CreateGeometryBase
+from utils import geometry_utils
 
 
 class ProcessingParameters(object):
@@ -19,7 +20,7 @@ class ProcessingParameters(object):
 
         self.stamp = None
         self.imagePlane = None
-        self.blockBase = None
+        self.stampWalls = None
         self.bottomCircle = None
 
 
@@ -35,7 +36,7 @@ class StampLithophane(BooleanMesh):
 
     def getBaseProcessingSteps(self, obj):
         return [('Image Plane', self.makeImagePlane),
-                ('Image Base', self.makeBlockBase),
+                ('Image Base', self.makeStampCylinder),
                 ('Bottom Plane', self.createBottomCircle),
                 ('Merge Meshes', self.mergeMeshes),
                 ('Optimize Mesh', self.optimizeMesh)]
@@ -46,58 +47,105 @@ class StampLithophane(BooleanMesh):
     def makeImagePlane(self, obj, image):
         processingParameters = ProcessingParameters(image)
         lines = processingParameters.image.lines
-        center = processingParameters.center
-        radius = processingParameters.radius
+        base_height = processingParameters.image._fp_obj.BaseHeight.Value
 
         facets = []
 
-        for lineNumber, actualLine in enumerate(lines):
-            if lineNumber == len(lines) - 1:
-                break
+        # Top surface (varying height lithophane)
+        # for lineNumber in range(len(lines) - 1):
+            # actualLine = lines[lineNumber]
+            # nextLine = lines[lineNumber + 1]
 
-            nextLine = lines[lineNumber + 1]
+            # for rowNumber in range(len(actualLine) - 1):
+                # p00_top = actualLine[rowNumber]
+                # p10_top = actualLine[rowNumber + 1]
+                # p01_top = nextLine[rowNumber]
+                # p11_top = nextLine[rowNumber + 1]
 
-            for rowNumber, actualPoint in enumerate(actualLine):
-                if rowNumber == len(actualLine) - 1:
-                    break
+                # facets.extend([p00_top, p10_top, p01_top])
+                # facets.extend([p10_top, p11_top, p01_top])
 
-                bottomLeft = actualPoint
-                
-                if center.distanceToPoint(bottomLeft) > radius:
-                    continue
+        # Four outer walls connecting the top lithophane surface to base_height
+        # These walls will connect to the `stampWalls`
+        
+        # 1. Wall along min_y edge
+        # for i in range(len(lines[0]) - 1):
+            # p1_top = lines[0][i]
+            # p2_top = lines[0][i+1]
+            # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
+            # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
+            # facets.extend([p1_top, p2_top, p2_bottom])
+            # facets.extend([p2_bottom, p1_bottom, p1_top])
 
-                bottomRight = actualLine[rowNumber + 1] 
-                topRight = nextLine[rowNumber + 1]  
-                topLeft = nextLine[rowNumber]
+        # 2. Wall along max_y edge
+        # for i in range(len(lines[-1]) - 1):
+            # p1_top = lines[-1][i]
+            # p2_top = lines[-1][i+1]
+            # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
+            # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
+            # facets.extend([p1_top, p1_bottom, p2_bottom]) # Reversed winding for external normal
+            # facets.extend([p2_bottom, p2_top, p1_top]) # Reversed winding for external normal
 
-                facets.extend([bottomLeft, bottomRight, topLeft])
-                facets.extend([bottomRight, topRight, topLeft])
+        # 3. Wall along min_x edge
+        # for i in range(len(lines) - 1):
+            # p1_top = lines[i][0]
+            # p2_top = lines[i+1][0]
+            # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
+            # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
+            # facets.extend([p1_top, p1_bottom, p2_bottom]) # Reversed winding
+            # facets.extend([p2_bottom, p2_top, p1_top]) # Reversed winding
 
+        # 4. Wall along max_x edge
+        # for i in range(len(lines) - 1):
+            # p1_top = lines[i][-1]
+            # p2_top = lines[i+1][-1]
+            # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
+            # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
+            # facets.extend([p1_top, p2_top, p2_bottom])
+            # facets.extend([p2_bottom, p1_bottom, p1_top])
+            
+        center_point = lithophane_utils.vectorAtGround(processingParameters.center)
+        radius = processingParameters.radius
+        for i in range(360):
+            angle1 = math.radians(i)
+            angle2 = math.radians((i + 1) % 360)
+            
+            p1 = geometry_utils.pointOnCircle(radius, angle1)
+            p2 = geometry_utils.pointOnCircle(radius, angle2)
+            
+            bottomLeft = FreeCAD.Vector(p1[0], p1[1], base_height)
+            bottomRight = FreeCAD.Vector(p2[0], p1[1], base_height)
+            
+            facets.extend([center_point, bottomLeft, bottomRight])
         processingParameters.imagePlane = Mesh.Mesh(facets)
 
         return processingParameters
 
-    def makeBlockBase(self, obj, processingParameters):
+    def makeStampCylinder(self, obj, processingParameters):
         center = processingParameters.center
         radius = processingParameters.radius
-        base_height = processingParameters.image.Object.BaseHeight.Value
+        base_height = processingParameters.image._fp_obj.BaseHeight.Value
         
         facets = []
         
+        # Side walls of the cylindrical base, from Z=0 to Z=base_height
         for i in range(360):
             angle1 = math.radians(i)
             angle2 = math.radians((i + 1) % 360)
 
-            p1_bottom = center + FreeCAD.Vector(radius * math.cos(angle1), radius * math.sin(angle1), 0)
-            p2_bottom = center + FreeCAD.Vector(radius * math.cos(angle2), radius * math.sin(angle2), 0)
-            
-            p1_top = FreeCAD.Vector(p1_bottom.x, p1_bottom.y, base_height)
-            p2_top = FreeCAD.Vector(p2_bottom.x, p2_bottom.y, base_height)
+            p1 = geometry_utils.pointOnCircle(processingParameters.radius, angle1)
+            p2 = geometry_utils.pointOnCircle(processingParameters.radius, angle2)
 
+            p1_bottom = center + FreeCAD.Vector(p1[0], p1[1], 0)
+            p2_bottom = center + FreeCAD.Vector(p2[0], p2[1], 0)
+            p1_top = center + FreeCAD.Vector(p1[0], p1[1], base_height)
+            p2_top = center + FreeCAD.Vector(p2[0], p2[1], base_height)
+
+            # Two triangles forming a quad for the current slice of the circumference
             facets.extend([p1_bottom, p2_bottom, p2_top])
             facets.extend([p2_top, p1_top, p1_bottom])
 
-        processingParameters.blockBase = Mesh.Mesh(facets)
+        processingParameters.stampWalls = Mesh.Mesh(facets)
         return processingParameters
 
 
@@ -107,17 +155,17 @@ class StampLithophane(BooleanMesh):
 
         facets = []
         
-        center_point = lithophane_utils.vectorAtGround(center)
+        center_point = lithophane_utils.vectorAtGround(center) # Center at Z=0
 
         for i in range(360):
             angle1 = math.radians(i)
             angle2 = math.radians((i + 1) % 360)
             
-            p1 = center + FreeCAD.Vector(radius * math.cos(angle1), radius * math.sin(angle1), 0)
-            p2 = center + FreeCAD.Vector(radius * math.cos(angle2), radius * math.sin(angle2), 0)
+            p1 = geometry_utils.pointOnCircle(radius, angle1)
+            p2 = geometry_utils.pointOnCircle(radius, angle2)
             
-            bottomLeft = lithophane_utils.vectorAtGround(p1)
-            bottomRight = lithophane_utils.vectorAtGround(p2)
+            bottomLeft = FreeCAD.Vector(p1[0], p1[1], 0)
+            bottomRight = FreeCAD.Vector(p2[0], p2[1], 0)
             
             facets.extend([center_point, bottomLeft, bottomRight])
 
@@ -128,7 +176,7 @@ class StampLithophane(BooleanMesh):
     def mergeMeshes(self, obj, processingParameters):
         processingParameters.stamp = Mesh.Mesh()
         processingParameters.stamp.addMesh(processingParameters.imagePlane)
-        processingParameters.stamp.addMesh(processingParameters.blockBase)
+        processingParameters.stamp.addMesh(processingParameters.stampWalls)
         processingParameters.stamp.addMesh(processingParameters.bottomCircle)
 
         return processingParameters
@@ -136,6 +184,25 @@ class StampLithophane(BooleanMesh):
     def optimizeMesh(self, obj, processingParameters):
         processingParameters.stamp.removeDuplicatedPoints()
         processingParameters.stamp.harmonizeNormals()
+
+        # Add mesh integrity checks here
+        FreeCAD.Console.PrintMessage("\n--- Mesh Diagnostics after optimization ---\
+")
+        FreeCAD.Console.PrintMessage(f"Number of points: {processingParameters.stamp.Points.__len__()}\
+")
+        FreeCAD.Console.PrintMessage(f"Number of facets: {processingParameters.stamp.Facets.__len__()}\
+")
+        
+        # Check for common mesh errors
+        if processingParameters.stamp.hasNonManifolds():
+            FreeCAD.Console.PrintError("Mesh has non-manifold edges!\n")
+        # if processingParameters.stamp.hasInvertedNormals():
+            # FreeCAD.Console.PrintError("Mesh has inverted normals!\n")
+        if processingParameters.stamp.isSelfIntersecting():
+            FreeCAD.Console.PrintError("Mesh is self-intersecting!\n")
+        
+        FreeCAD.Console.PrintMessage("--- End Mesh Diagnostics ---\
+")
 
         return processingParameters
 

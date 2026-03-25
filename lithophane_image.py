@@ -181,15 +181,16 @@ class LithophaneImage(BaseLithophaneProcessor):
         super(LithophaneImage, self).__init__('Recalculate Image')
 
         obj.addProperty("App::PropertyString","Path","LithophaneImage","Path to the original image").Path=imagePath
-        obj.addProperty("App::PropertyFloat", "ppi", "LithophaneImage", "Pixels per Inch").ppi = 300
-        obj.addProperty("App::PropertyLength", "NozzleSize", "LithophaneImage", "Size of your 3D printers Nozzle").NozzleSize = 0.4
+        obj.addProperty("App::PropertyFloat", "ppi", "LithophaneImage", "Pixels per Inch").ppi = 2000
+        obj.addProperty("App::PropertyLength", "NozzleSize", "LithophaneImage", "Size of your 3D printers Nozzle").NozzleSize = 0.1
         obj.addProperty("App::PropertyLength", "LayerHeight", "LithophaneImage", "The height of a single layer your 3D Printer can print").LayerHeight = 0.1
-        obj.addProperty("App::PropertyLength", "BaseHeight", "LithophaneImage", "The height of the white color").BaseHeight = 0.5
-        obj.addProperty("App::PropertyLength", "MaximumHeight", "LithophaneImage", "The height of the black color").MaximumHeight = 3
+        obj.addProperty("App::PropertyLength", "BaseHeight", "LithophaneImage", "The height of the white color").BaseHeight = 11.43
+        obj.addProperty("App::PropertyLength", "MaximumHeight", "LithophaneImage", "The height of the black color").MaximumHeight = 12.7
         
         obj.addProperty("App::PropertyFloat", "UpdateNotifier", "LithophaneImage", "Notifies the View Provider that something changed.").UpdateNotifier = -1
         
         obj.Proxy = self
+        self._fp_obj = obj # Store reference to the FreeCAD document object for property access
 
         self.lastPath = imagePath
         self.isLithophaneImage = True
@@ -262,6 +263,7 @@ class LithophaneImage(BaseLithophaneProcessor):
         self.imageWidth = imageSize.width()
 
         self.isLithophaneImage = True
+        self._fp_obj = None # Ensure _fp_obj is reset upon deserialization
         
         return None
     
