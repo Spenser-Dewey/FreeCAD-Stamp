@@ -47,7 +47,7 @@ class StampLithophane(BooleanMesh):
     def makeImagePlane(self, obj, image):
         processingParameters = ProcessingParameters(image)
         lines = processingParameters.image.lines
-        base_height = processingParameters.image._fp_obj.BaseHeight.Value
+        base_height = obj.LithophaneImage.BaseHeight.Value
 
         facets = []
 
@@ -124,10 +124,10 @@ class StampLithophane(BooleanMesh):
     def makeStampCylinder(self, obj, processingParameters):
         center = processingParameters.center
         radius = processingParameters.radius
-        base_height = processingParameters.image._fp_obj.BaseHeight.Value
-        
+        base_height = obj.LithophaneImage.BaseHeight.Value
+
         facets = []
-        
+
         # Side walls of the cylindrical base, from Z=0 to Z=base_height
         for i in range(360):
             angle1 = math.radians(i)
