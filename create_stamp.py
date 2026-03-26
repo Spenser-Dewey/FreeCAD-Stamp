@@ -65,44 +65,46 @@ class StampLithophane(BooleanMesh):
                 # facets.extend([p00_top, p10_top, p01_top])
                 # facets.extend([p10_top, p11_top, p01_top])
 
-        # Four outer walls connecting the top lithophane surface to base_height
-        # These walls will connect to the `stampWalls`
-        
-        # 1. Wall along min_y edge
+        # NOTE: These 4 rectangular walls don't align with the circular cylinder rim.
+        # The circle is inscribed in the image rectangle, so the corners of the rectangle
+        # extend beyond the circle. This will leave gaps unless the lithophane is cropped
+        # to the circle or the base is made rectangular instead.
+
+        # 1. Wall along min_y edge (outward normal: -Y)
         # for i in range(len(lines[0]) - 1):
             # p1_top = lines[0][i]
             # p2_top = lines[0][i+1]
             # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
             # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
-            # facets.extend([p1_top, p2_top, p2_bottom])
-            # facets.extend([p2_bottom, p1_bottom, p1_top])
+            # facets.extend([p1_top, p2_bottom, p2_top])
+            # facets.extend([p2_bottom, p1_top, p1_bottom])
 
-        # 2. Wall along max_y edge
+        # 2. Wall along max_y edge (outward normal: +Y)
         # for i in range(len(lines[-1]) - 1):
             # p1_top = lines[-1][i]
             # p2_top = lines[-1][i+1]
             # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
             # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
-            # facets.extend([p1_top, p1_bottom, p2_bottom]) # Reversed winding for external normal
-            # facets.extend([p2_bottom, p2_top, p1_top]) # Reversed winding for external normal
+            # facets.extend([p1_top, p2_bottom, p1_bottom])
+            # facets.extend([p2_bottom, p1_top, p2_top])
 
-        # 3. Wall along min_x edge
+        # 3. Wall along min_x edge (outward normal: -X)
         # for i in range(len(lines) - 1):
             # p1_top = lines[i][0]
             # p2_top = lines[i+1][0]
             # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
             # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
-            # facets.extend([p1_top, p1_bottom, p2_bottom]) # Reversed winding
-            # facets.extend([p2_bottom, p2_top, p1_top]) # Reversed winding
+            # facets.extend([p1_top, p2_bottom, p1_bottom])
+            # facets.extend([p2_bottom, p1_top, p2_top])
 
-        # 4. Wall along max_x edge
+        # 4. Wall along max_x edge (outward normal: +X)
         # for i in range(len(lines) - 1):
             # p1_top = lines[i][-1]
             # p2_top = lines[i+1][-1]
             # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
             # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
-            # facets.extend([p1_top, p2_top, p2_bottom])
-            # facets.extend([p2_bottom, p1_bottom, p1_top])
+            # facets.extend([p1_top, p2_bottom, p2_top])
+            # facets.extend([p2_bottom, p1_top, p1_bottom])
             
         center = processingParameters.center
         center_point = FreeCAD.Vector(center.x, center.y, base_height)
