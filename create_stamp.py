@@ -12,6 +12,21 @@ from create_geometry_base import CreateGeometryBase
 from utils import geometry_utils
 
 
+def _in_circle(point, center, radius):
+    dx = point.x - center.x
+    dy = point.y - center.y
+    return dx * dx + dy * dy <= radius * radius
+
+
+def _height_at(lines, x, y, pixel_size):
+    """Nearest-neighbour height lookup into the lines grid."""
+    col = int(round(x / pixel_size))
+    row = int(round(y / pixel_size))
+    col = max(0, min(col, len(lines[0]) - 1))
+    row = max(0, min(row, len(lines) - 1))
+    return lines[row][col].z
+
+
 class ProcessingParameters(object):
     def __init__(self, image):
         self.image = image
@@ -48,77 +63,45 @@ class StampLithophane(BooleanMesh):
         processingParameters = ProcessingParameters(image)
         lines = processingParameters.image.lines
         base_height = obj.LithophaneImage.BaseHeight.Value
+        center = processingParameters.center
+        radius = processingParameters.radius
+        pixel_size = lines[0][1].x
 
         facets = []
 
-        # Top surface (varying height lithophane)
-        # for lineNumber in range(len(lines) - 1):
-            # actualLine = lines[lineNumber]
-            # nextLine = lines[lineNumber + 1]
+        # Top surface: only emit quads fully within the circle
+        for lineNumber in range(len(lines) - 1):
+            actualLine = lines[lineNumber]
+            nextLine = lines[lineNumber + 1]
+            for rowNumber in range(len(actualLine) - 1):
+                p00 = actualLine[rowNumber]
+                p10 = actualLine[rowNumber + 1]
+                p01 = nextLine[rowNumber]
+                p11 = nextLine[rowNumber + 1]
+                if all(_in_circle(p, center, radius) for p in (p00, p10, p01, p11)):
+                    facets.extend([p00, p10, p01])
+                    facets.extend([p10, p11, p01])
 
-            # for rowNumber in range(len(actualLine) - 1):
-                # p00_top = actualLine[rowNumber]
-                # p10_top = actualLine[rowNumber + 1]
-                # p01_top = nextLine[rowNumber]
-                # p11_top = nextLine[rowNumber + 1]
-
-                # facets.extend([p00_top, p10_top, p01_top])
-                # facets.extend([p10_top, p11_top, p01_top])
-
-        # NOTE: These 4 rectangular walls don't align with the circular cylinder rim.
-        # The circle is inscribed in the image rectangle, so the corners of the rectangle
-        # extend beyond the circle. This will leave gaps unless the lithophane is cropped
-        # to the circle or the base is made rectangular instead.
-
-        # 1. Wall along min_y edge (outward normal: -Y)
-        # for i in range(len(lines[0]) - 1):
-            # p1_top = lines[0][i]
-            # p2_top = lines[0][i+1]
-            # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
-            # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
-            # facets.extend([p1_top, p2_bottom, p2_top])
-            # facets.extend([p2_bottom, p1_top, p1_bottom])
-
-        # 2. Wall along max_y edge (outward normal: +Y)
-        # for i in range(len(lines[-1]) - 1):
-            # p1_top = lines[-1][i]
-            # p2_top = lines[-1][i+1]
-            # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
-            # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
-            # facets.extend([p1_top, p2_bottom, p1_bottom])
-            # facets.extend([p2_bottom, p1_top, p2_top])
-
-        # 3. Wall along min_x edge (outward normal: -X)
-        # for i in range(len(lines) - 1):
-            # p1_top = lines[i][0]
-            # p2_top = lines[i+1][0]
-            # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
-            # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
-            # facets.extend([p1_top, p2_bottom, p1_bottom])
-            # facets.extend([p2_bottom, p1_top, p2_top])
-
-        # 4. Wall along max_x edge (outward normal: +X)
-        # for i in range(len(lines) - 1):
-            # p1_top = lines[i][-1]
-            # p2_top = lines[i+1][-1]
-            # p1_bottom = FreeCAD.Vector(p1_top.x, p1_top.y, base_height)
-            # p2_bottom = FreeCAD.Vector(p2_top.x, p2_top.y, base_height)
-            # facets.extend([p1_top, p2_bottom, p2_top])
-            # facets.extend([p2_bottom, p1_top, p1_bottom])
-            
-        center = processingParameters.center
-        center_point = FreeCAD.Vector(center.x, center.y, base_height)
-        radius = processingParameters.radius
+        # Rim wall: connects the circle boundary from lithophane height down to
+        # base_height, sealing the gap between the cropped top surface and the
+        # cylinder wall top edge. Uses nearest-neighbour lookup for height.
         for i in range(360):
-            p1 = geometry_utils.pointOnCircle(radius, i)
-            p2 = geometry_utils.pointOnCircle(radius, (i + 1) % 360)
+            p1_xy = geometry_utils.pointOnCircle(radius, i)
+            p2_xy = geometry_utils.pointOnCircle(radius, (i + 1) % 360)
 
-            v1 = center + FreeCAD.Vector(p1[0], p1[1], base_height)
-            v2 = center + FreeCAD.Vector(p2[0], p2[1], base_height)
+            z1 = _height_at(lines, center.x + p1_xy[0], center.y + p1_xy[1], pixel_size)
+            z2 = _height_at(lines, center.x + p2_xy[0], center.y + p2_xy[1], pixel_size)
 
-            facets.extend([center_point, v1, v2])
+            rim_top1 = center + FreeCAD.Vector(p1_xy[0], p1_xy[1], z1)
+            rim_top2 = center + FreeCAD.Vector(p2_xy[0], p2_xy[1], z2)
+            rim_bot1 = center + FreeCAD.Vector(p1_xy[0], p1_xy[1], base_height)
+            rim_bot2 = center + FreeCAD.Vector(p2_xy[0], p2_xy[1], base_height)
+
+            # Same winding pattern as makeStampCylinder
+            facets.extend([rim_bot1, rim_bot2, rim_top2])
+            facets.extend([rim_top2, rim_top1, rim_bot1])
+
         processingParameters.imagePlane = Mesh.Mesh(facets)
-
         return processingParameters
 
     def makeStampCylinder(self, obj, processingParameters):
